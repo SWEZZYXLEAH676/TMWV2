@@ -1,0 +1,1697 @@
+local Config = {
+    main_color = Color3.fromRGB(41, 74, 122),
+    min_size = Vector2.new(400, 300),
+    toggle_key = Enum.KeyCode.RightShift,
+    can_resize = true,
+}
+
+local function getGui()
+    if syn and syn.protect_gui then
+        local gui = Instance.new("ScreenGui")
+        syn.protect_gui(gui)
+        gui.Parent = game:GetService("CoreGui")
+        return gui
+    elseif gethui then
+        local gui = Instance.new("ScreenGui")
+        gui.Parent = gethui()
+        return gui
+    else
+        local ok, result = pcall(function()
+            local gui = Instance.new("ScreenGui")
+            gui.Parent = game:GetService("CoreGui")
+            return gui
+        end)
+        if ok then return result end
+        local gui = Instance.new("ScreenGui")
+        gui.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+        return gui
+    end
+end
+
+do
+    local existing = game:GetService("CoreGui"):FindFirstChild("imgui")
+        or (gethui and gethui():FindFirstChild("imgui"))
+    if existing then existing:Destroy() end
+end
+
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
+
+local ScreenGui = getGui()
+ScreenGui.Name = "imgui"
+
+local WindowsContainer = Instance.new("Frame")
+WindowsContainer.Name = "Windows"
+WindowsContainer.Parent = ScreenGui
+WindowsContainer.BackgroundColor3 = Color3.new(1, 1, 1)
+WindowsContainer.BackgroundTransparency = 1
+WindowsContainer.Position = UDim2.new(0, 20, 0, 20)
+WindowsContainer.Size = UDim2.new(1, 20, 1, -20)
+
+script.Parent = ScreenGui
+
+local Prefabs = Instance.new("Frame")
+Prefabs.Name = "Prefabs"
+Prefabs.Parent = ScreenGui
+Prefabs.BackgroundColor3 = Color3.new(1, 1, 1)
+Prefabs.Size = UDim2.new(0, 100, 0, 100)
+Prefabs.Visible = false
+
+local LabelPrefab = Instance.new("TextLabel")
+LabelPrefab.Name = "Label"
+LabelPrefab.Parent = Prefabs
+LabelPrefab.BackgroundColor3 = Color3.new(1, 1, 1)
+LabelPrefab.BackgroundTransparency = 1
+LabelPrefab.Size = UDim2.new(0, 200, 0, 20)
+LabelPrefab.Font = Enum.Font.FredokaOne
+LabelPrefab.Text = "Hello, world 123"
+LabelPrefab.TextColor3 = Color3.new(1, 1, 1)
+LabelPrefab.TextSize = 16
+LabelPrefab.TextXAlignment = Enum.TextXAlignment.Left
+
+local WindowPrefab = Instance.new("ImageLabel")
+WindowPrefab.Name = "Window"
+WindowPrefab.Parent = Prefabs
+WindowPrefab.Active = true
+WindowPrefab.BackgroundColor3 = Color3.new(1, 1, 1)
+WindowPrefab.BackgroundTransparency = 1
+WindowPrefab.ClipsDescendants = true
+WindowPrefab.Position = UDim2.new(0, 20, 0, 20)
+WindowPrefab.Selectable = true
+WindowPrefab.Size = UDim2.new(0, 200, 0, 200)
+WindowPrefab.Image = "rbxassetid://2851926732"
+WindowPrefab.ImageColor3 = Color3.new(0.0823529, 0.0862745, 0.0901961)
+WindowPrefab.ScaleType = Enum.ScaleType.Slice
+WindowPrefab.SliceCenter = Rect.new(12, 12, 12, 12)
+
+local ResizerPrefab = Instance.new("Frame")
+ResizerPrefab.Name = "Resizer"
+ResizerPrefab.Parent = WindowPrefab
+ResizerPrefab.Active = true
+ResizerPrefab.BackgroundColor3 = Color3.new(1, 1, 1)
+ResizerPrefab.BackgroundTransparency = 1
+ResizerPrefab.BorderSizePixel = 0
+ResizerPrefab.Position = UDim2.new(1, -20, 1, -20)
+ResizerPrefab.Size = UDim2.new(0, 20, 0, 20)
+
+local BarPrefab = Instance.new("Frame")
+BarPrefab.Name = "Bar"
+BarPrefab.Parent = WindowPrefab
+BarPrefab.BackgroundColor3 = Color3.new(0.160784, 0.290196, 0.478431)
+BarPrefab.BorderSizePixel = 0
+BarPrefab.Position = UDim2.new(0, 0, 0, 5)
+BarPrefab.Size = UDim2.new(1, 0, 0, 15)
+
+local ToggleButton = Instance.new("ImageButton")
+ToggleButton.Name = "Toggle"
+ToggleButton.Parent = BarPrefab
+ToggleButton.BackgroundColor3 = Color3.new(1, 1, 1)
+ToggleButton.BackgroundTransparency = 1
+ToggleButton.Position = UDim2.new(0, 5, 0, -2)
+ToggleButton.Rotation = 0
+ToggleButton.Size = UDim2.new(0, 20, 0, 20)
+ToggleButton.ZIndex = 2
+ToggleButton.Image = "https://www.roblox.com/asset/?id=98691340765771"
+
+local BarBase = Instance.new("ImageLabel")
+BarBase.Name = "Base"
+BarBase.Parent = BarPrefab
+BarBase.BackgroundColor3 = Color3.new(0.160784, 0.290196, 0.478431)
+BarBase.BorderSizePixel = 0
+BarBase.Position = UDim2.new(0, 0, 0.8, 0)
+BarBase.Size = UDim2.new(1, 0, 0, 10)
+BarBase.Image = "rbxassetid://2851926732"
+BarBase.ImageColor3 = Color3.new(0.160784, 0.290196, 0.478431)
+BarBase.ScaleType = Enum.ScaleType.Slice
+BarBase.SliceCenter = Rect.new(12, 12, 12, 12)
+
+local BarTop = Instance.new("ImageLabel")
+BarTop.Name = "Top"
+BarTop.Parent = BarPrefab
+BarTop.BackgroundColor3 = Color3.new(1, 1, 1)
+BarTop.BackgroundTransparency = 1
+BarTop.Position = UDim2.new(0, 0, 0, -5)
+BarTop.Size = UDim2.new(1, 0, 0, 10)
+BarTop.Image = "rbxassetid://2851926732"
+BarTop.ImageColor3 = Color3.new(0.160784, 0.290196, 0.478431)
+BarTop.ScaleType = Enum.ScaleType.Slice
+BarTop.SliceCenter = Rect.new(12, 12, 12, 12)
+
+local TabsFrame = Instance.new("Frame")
+TabsFrame.Name = "Tabs"
+TabsFrame.Parent = WindowPrefab
+TabsFrame.BackgroundColor3 = Color3.new(1, 1, 1)
+TabsFrame.BackgroundTransparency = 1
+TabsFrame.ClipsDescendants = true
+TabsFrame.Position = UDim2.new(0, 15, 0, 60)
+TabsFrame.Size = UDim2.new(1, -30, 1, -60)
+
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Name = "Title"
+TitleLabel.Parent = WindowPrefab
+TitleLabel.BackgroundColor3 = Color3.new(1, 1, 1)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Position = UDim2.new(0, 30, 0, 3)
+TitleLabel.Size = UDim2.new(0, 200, 0, 20)
+TitleLabel.Font = Enum.Font.FredokaOne
+TitleLabel.Text = "Gamer Time"
+TitleLabel.TextColor3 = Color3.new(1, 1, 1)
+TitleLabel.TextSize = 16
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local TabSelectionBar = Instance.new("ImageLabel")
+TabSelectionBar.Name = "TabSelection"
+TabSelectionBar.Parent = WindowPrefab
+TabSelectionBar.BackgroundColor3 = Color3.new(1, 1, 1)
+TabSelectionBar.BackgroundTransparency = 1
+TabSelectionBar.Position = UDim2.new(0, 15, 0, 30)
+TabSelectionBar.Size = UDim2.new(1, -30, 0, 25)
+TabSelectionBar.Visible = false
+TabSelectionBar.Image = "rbxassetid://2851929490"
+TabSelectionBar.ImageColor3 = Color3.new(0.145098, 0.14902, 0.156863)
+TabSelectionBar.ScaleType = Enum.ScaleType.Slice
+TabSelectionBar.SliceCenter = Rect.new(4, 4, 4, 4)
+
+local TabScrolling = Instance.new("ScrollingFrame")
+TabScrolling.Name = "TabScrolling"
+TabScrolling.Parent = TabSelectionBar
+TabScrolling.BackgroundTransparency = 1
+TabScrolling.BorderSizePixel = 0
+TabScrolling.Size = UDim2.new(1, 0, 1, 0)
+TabScrolling.CanvasSize = UDim2.new(0, 0, 1, 0)
+TabScrolling.ScrollBarThickness = 0
+TabScrolling.ScrollingDirection = Enum.ScrollingDirection.X
+
+local TabButtonsContainer = Instance.new("Frame")
+TabButtonsContainer.Name = "TabButtons"
+TabButtonsContainer.Parent = TabScrolling
+TabButtonsContainer.BackgroundColor3 = Color3.new(1, 1, 1)
+TabButtonsContainer.BackgroundTransparency = 1
+TabButtonsContainer.Size = UDim2.new(0, 0, 1, 0)
+TabButtonsContainer.ClipsDescendants = true
+
+local TabButtonsLayout = Instance.new("UIListLayout")
+TabButtonsLayout.Parent = TabButtonsContainer
+TabButtonsLayout.FillDirection = Enum.FillDirection.Horizontal
+TabButtonsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+TabButtonsLayout.Padding = UDim.new(0, 2)
+
+local TabUnderline = Instance.new("Frame")
+TabUnderline.Parent = TabSelectionBar
+TabUnderline.BackgroundColor3 = Color3.new(0.12549, 0.227451, 0.372549)
+TabUnderline.BorderColor3 = Color3.new(0.105882, 0.164706, 0.207843)
+TabUnderline.BorderSizePixel = 0
+TabUnderline.Position = UDim2.new(0, 0, 1, 0)
+TabUnderline.Size = UDim2.new(1, 0, 0, 2)
+
+local TabContentPrefab = Instance.new("Frame")
+TabContentPrefab.Name = "Tab"
+TabContentPrefab.Parent = Prefabs
+TabContentPrefab.BackgroundColor3 = Color3.new(1, 1, 1)
+TabContentPrefab.BackgroundTransparency = 1
+TabContentPrefab.Size = UDim2.new(1, 0, 1, 0)
+TabContentPrefab.Visible = false
+
+local TabContentLayout = Instance.new("UIListLayout")
+TabContentLayout.Parent = TabContentPrefab
+TabContentLayout.SortOrder = Enum.SortOrder.LayoutOrder
+TabContentLayout.Padding = UDim.new(0, 5)
+
+local InputPrefab = Instance.new("TextBox")
+InputPrefab.Parent = Prefabs
+InputPrefab.BackgroundColor3 = Color3.new(1, 1, 1)
+InputPrefab.BackgroundTransparency = 1
+InputPrefab.BorderSizePixel = 0
+InputPrefab.Size = UDim2.new(1, 0, 0, 20)
+InputPrefab.ZIndex = 2
+InputPrefab.Font = Enum.Font.FredokaOne
+InputPrefab.PlaceholderColor3 = Color3.new(0.698039, 0.698039, 0.698039)
+InputPrefab.PlaceholderText = "Input Text"
+InputPrefab.Text = ""
+InputPrefab.TextColor3 = Color3.new(0.784314, 0.784314, 0.784314)
+InputPrefab.TextSize = 14
+
+local InputBackground = Instance.new("ImageLabel")
+InputBackground.Name = "TextBox_Roundify_4px"
+InputBackground.Parent = InputPrefab
+InputBackground.BackgroundColor3 = Color3.new(1, 1, 1)
+InputBackground.BackgroundTransparency = 1
+InputBackground.Size = UDim2.new(1, 0, 1, 0)
+InputBackground.Image = "rbxassetid://2851929490"
+InputBackground.ImageColor3 = Color3.new(0.203922, 0.207843, 0.219608)
+InputBackground.ScaleType = Enum.ScaleType.Slice
+InputBackground.SliceCenter = Rect.new(4, 4, 4, 4)
+
+local SliderPrefab = Instance.new("ImageLabel")
+SliderPrefab.Name = "Slider"
+SliderPrefab.Parent = Prefabs
+SliderPrefab.BackgroundColor3 = Color3.new(1, 1, 1)
+SliderPrefab.BackgroundTransparency = 1
+SliderPrefab.Position = UDim2.new(0, 0, 0.178571433, 0)
+SliderPrefab.Size = UDim2.new(1, 0, 0, 20)
+SliderPrefab.Image = "rbxassetid://2851929490"
+SliderPrefab.ImageColor3 = Color3.new(0.145098, 0.14902, 0.156863)
+SliderPrefab.ScaleType = Enum.ScaleType.Slice
+SliderPrefab.SliceCenter = Rect.new(4, 4, 4, 4)
+
+local SliderTitle = Instance.new("TextLabel")
+SliderTitle.Name = "Title"
+SliderTitle.Parent = SliderPrefab
+SliderTitle.BackgroundColor3 = Color3.new(1, 1, 1)
+SliderTitle.BackgroundTransparency = 1
+SliderTitle.Position = UDim2.new(0.5, 0, 0.5, -10)
+SliderTitle.Size = UDim2.new(0, 0, 0, 20)
+SliderTitle.ZIndex = 2
+SliderTitle.Font = Enum.Font.FredokaOne
+SliderTitle.Text = "Slider"
+SliderTitle.TextColor3 = Color3.new(0.784314, 0.784314, 0.784314)
+SliderTitle.TextSize = 14
+
+local SliderFill = Instance.new("ImageLabel")
+SliderFill.Name = "Indicator"
+SliderFill.Parent = SliderPrefab
+SliderFill.BackgroundColor3 = Color3.new(1, 1, 1)
+SliderFill.BackgroundTransparency = 1
+SliderFill.Size = UDim2.new(0, 0, 0, 20)
+SliderFill.Image = "rbxassetid://2851929490"
+SliderFill.ImageColor3 = Color3.new(0.254902, 0.262745, 0.278431)
+SliderFill.ScaleType = Enum.ScaleType.Slice
+SliderFill.SliceCenter = Rect.new(4, 4, 4, 4)
+
+local SliderValueLabel = Instance.new("TextLabel")
+SliderValueLabel.Name = "Value"
+SliderValueLabel.Parent = SliderPrefab
+SliderValueLabel.BackgroundColor3 = Color3.new(1, 1, 1)
+SliderValueLabel.BackgroundTransparency = 1
+SliderValueLabel.Position = UDim2.new(1, -55, 0.5, -10)
+SliderValueLabel.Size = UDim2.new(0, 50, 0, 20)
+SliderValueLabel.Font = Enum.Font.FredokaOne
+SliderValueLabel.Text = "0%"
+SliderValueLabel.TextColor3 = Color3.new(0.784314, 0.784314, 0.784314)
+SliderValueLabel.TextSize = 14
+
+local SliderRightBracket = Instance.new("TextLabel")
+SliderRightBracket.Parent = SliderPrefab
+SliderRightBracket.BackgroundColor3 = Color3.new(1, 1, 1)
+SliderRightBracket.BackgroundTransparency = 1
+SliderRightBracket.Position = UDim2.new(1, -20, -0.75, 0)
+SliderRightBracket.Size = UDim2.new(0, 26, 0, 50)
+SliderRightBracket.Font = Enum.Font.FredokaOne
+SliderRightBracket.Text = "]"
+SliderRightBracket.TextColor3 = Color3.new(0.627451, 0.627451, 0.627451)
+SliderRightBracket.TextSize = 14
+
+local SliderLeftBracket = Instance.new("TextLabel")
+SliderLeftBracket.Parent = SliderPrefab
+SliderLeftBracket.BackgroundColor3 = Color3.new(1, 1, 1)
+SliderLeftBracket.BackgroundTransparency = 1
+SliderLeftBracket.Position = UDim2.new(1, -65, -0.75, 0)
+SliderLeftBracket.Size = UDim2.new(0, 26, 0, 50)
+SliderLeftBracket.Font = Enum.Font.FredokaOne
+SliderLeftBracket.Text = "["
+SliderLeftBracket.TextColor3 = Color3.new(0.627451, 0.627451, 0.627451)
+SliderLeftBracket.TextSize = 14
+
+local CirclePrefab = Instance.new("ImageLabel")
+CirclePrefab.Name = "Circle"
+CirclePrefab.Parent = Prefabs
+CirclePrefab.BackgroundColor3 = Color3.new(1, 1, 1)
+CirclePrefab.BackgroundTransparency = 1
+CirclePrefab.Image = "rbxassetid://266543268"
+CirclePrefab.ImageTransparency = 0.5
+
+local CircleLayout = Instance.new("UIListLayout")
+CircleLayout.Parent = Prefabs
+CircleLayout.FillDirection = Enum.FillDirection.Horizontal
+CircleLayout.SortOrder = Enum.SortOrder.LayoutOrder
+CircleLayout.Padding = UDim.new(0, 20)
+
+local DropdownPrefab = Instance.new("TextButton")
+DropdownPrefab.Name = "Dropdown"
+DropdownPrefab.Parent = Prefabs
+DropdownPrefab.BackgroundColor3 = Color3.new(1, 1, 1)
+DropdownPrefab.BackgroundTransparency = 1
+DropdownPrefab.BorderSizePixel = 0
+DropdownPrefab.Position = UDim2.new(-0.055555556, 0, 0.0833333284, 0)
+DropdownPrefab.Size = UDim2.new(0, 200, 0, 20)
+DropdownPrefab.ZIndex = 2
+DropdownPrefab.Font = Enum.Font.FredokaOne
+DropdownPrefab.Text = "      Dropdown"
+DropdownPrefab.TextColor3 = Color3.new(0.784314, 0.784314, 0.784314)
+DropdownPrefab.TextSize = 14
+DropdownPrefab.TextXAlignment = Enum.TextXAlignment.Left
+
+local DropdownArrow = Instance.new("ImageLabel")
+DropdownArrow.Name = "Indicator"
+DropdownArrow.Parent = DropdownPrefab
+DropdownArrow.BackgroundColor3 = Color3.new(1, 1, 1)
+DropdownArrow.BackgroundTransparency = 1
+DropdownArrow.Position = UDim2.new(0.899999976, -10, 0.100000001, 0)
+DropdownArrow.Rotation = -90
+DropdownArrow.Size = UDim2.new(0, 15, 0, 15)
+DropdownArrow.ZIndex = 2
+DropdownArrow.Image = "https://www.roblox.com/Thumbs/Asset.ashx?width=420&height=420&assetId=4744658743"
+
+local DropdownBox = Instance.new("ImageButton")
+DropdownBox.Name = "Box"
+DropdownBox.Parent = DropdownPrefab
+DropdownBox.BackgroundColor3 = Color3.new(1, 1, 1)
+DropdownBox.BackgroundTransparency = 1
+DropdownBox.Position = UDim2.new(0, 0, 0, 25)
+DropdownBox.Size = UDim2.new(1, 0, 0, 150)
+DropdownBox.ZIndex = 3
+DropdownBox.Image = "rbxassetid://2851929490"
+DropdownBox.ImageColor3 = Color3.new(0.129412, 0.133333, 0.141176)
+DropdownBox.ScaleType = Enum.ScaleType.Slice
+DropdownBox.SliceCenter = Rect.new(4, 4, 4, 4)
+
+local DropdownObjects = Instance.new("ScrollingFrame")
+DropdownObjects.Name = "Objects"
+DropdownObjects.Parent = DropdownBox
+DropdownObjects.BackgroundColor3 = Color3.new(1, 1, 1)
+DropdownObjects.BackgroundTransparency = 1
+DropdownObjects.BorderSizePixel = 0
+DropdownObjects.Size = UDim2.new(1, 0, 1, 0)
+DropdownObjects.ZIndex = 3
+DropdownObjects.CanvasSize = UDim2.new(0, 0, 0, 0)
+DropdownObjects.ScrollBarThickness = 4
+DropdownObjects.ScrollBarImageColor3 = Color3.fromRGB(255, 0, 0)
+
+local DropdownObjectsLayout = Instance.new("UIListLayout")
+DropdownObjectsLayout.Parent = DropdownObjects
+DropdownObjectsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+local DropdownBackground = Instance.new("ImageLabel")
+DropdownBackground.Name = "TextButton_Roundify_4px"
+DropdownBackground.Parent = DropdownPrefab
+DropdownBackground.BackgroundColor3 = Color3.new(1, 1, 1)
+DropdownBackground.BackgroundTransparency = 1
+DropdownBackground.Size = UDim2.new(1, 0, 1, 0)
+DropdownBackground.Image = "rbxassetid://2851929490"
+DropdownBackground.ImageColor3 = Color3.new(0.203922, 0.207843, 0.219608)
+DropdownBackground.ScaleType = Enum.ScaleType.Slice
+DropdownBackground.SliceCenter = Rect.new(4, 4, 4, 4)
+
+local TabButtonPrefab = Instance.new("TextButton")
+TabButtonPrefab.Name = "TabButton"
+TabButtonPrefab.Parent = Prefabs
+TabButtonPrefab.BackgroundColor3 = Color3.new(0.160784, 0.290196, 0.478431)
+TabButtonPrefab.BackgroundTransparency = 1
+TabButtonPrefab.BorderSizePixel = 0
+TabButtonPrefab.Position = UDim2.new(0.185185179, 0, 0, 0)
+TabButtonPrefab.Size = UDim2.new(0, 71, 0, 20)
+TabButtonPrefab.ZIndex = 2
+TabButtonPrefab.Font = Enum.Font.FredokaOne
+TabButtonPrefab.Text = "Test tab"
+TabButtonPrefab.TextColor3 = Color3.new(0.784314, 0.784314, 0.784314)
+TabButtonPrefab.TextSize = 14
+
+local TabButtonBackground = Instance.new("ImageLabel")
+TabButtonBackground.Name = "TextButton_Roundify_4px"
+TabButtonBackground.Parent = TabButtonPrefab
+TabButtonBackground.BackgroundColor3 = Color3.new(1, 1, 1)
+TabButtonBackground.BackgroundTransparency = 1
+TabButtonBackground.Size = UDim2.new(1, 0, 1, 0)
+TabButtonBackground.Image = "rbxassetid://2851929490"
+TabButtonBackground.ImageColor3 = Color3.new(0.203922, 0.207843, 0.219608)
+TabButtonBackground.ScaleType = Enum.ScaleType.Slice
+TabButtonBackground.SliceCenter = Rect.new(4, 4, 4, 4)
+
+local FolderPrefab = Instance.new("ImageLabel")
+FolderPrefab.Name = "Folder"
+FolderPrefab.Parent = Prefabs
+FolderPrefab.BackgroundColor3 = Color3.new(1, 1, 1)
+FolderPrefab.BackgroundTransparency = 1
+FolderPrefab.Position = UDim2.new(0, 0, 0, 50)
+FolderPrefab.Size = UDim2.new(1, 0, 0, 20)
+FolderPrefab.Image = "rbxassetid://2851929490"
+FolderPrefab.ImageColor3 = Color3.new(0.0823529, 0.0862745, 0.0901961)
+FolderPrefab.ScaleType = Enum.ScaleType.Slice
+FolderPrefab.SliceCenter = Rect.new(4, 4, 4, 4)
+
+local FolderButton = Instance.new("TextButton")
+FolderButton.Name = "Button"
+FolderButton.Parent = FolderPrefab
+FolderButton.BackgroundColor3 = Color3.new(0.160784, 0.290196, 0.478431)
+FolderButton.BackgroundTransparency = 1
+FolderButton.BorderSizePixel = 0
+FolderButton.Size = UDim2.new(1, 0, 0, 20)
+FolderButton.ZIndex = 2
+FolderButton.Font = Enum.Font.FredokaOne
+FolderButton.Text = "      Folder"
+FolderButton.TextColor3 = Color3.new(1, 1, 1)
+FolderButton.TextSize = 14
+FolderButton.TextXAlignment = Enum.TextXAlignment.Left
+
+local FolderButtonBackground = Instance.new("ImageLabel")
+FolderButtonBackground.Name = "TextButton_Roundify_4px"
+FolderButtonBackground.Parent = FolderButton
+FolderButtonBackground.BackgroundColor3 = Color3.new(1, 1, 1)
+FolderButtonBackground.BackgroundTransparency = 1
+FolderButtonBackground.Size = UDim2.new(1, 0, 1, 0)
+FolderButtonBackground.Image = "rbxassetid://2851929490"
+FolderButtonBackground.ImageColor3 = Color3.new(0.160784, 0.290196, 0.478431)
+FolderButtonBackground.ScaleType = Enum.ScaleType.Slice
+FolderButtonBackground.SliceCenter = Rect.new(4, 4, 4, 4)
+
+local FolderToggleIcon = Instance.new("ImageLabel")
+FolderToggleIcon.Name = "Toggle"
+FolderToggleIcon.Parent = FolderButton
+FolderToggleIcon.BackgroundColor3 = Color3.new(1, 1, 1)
+FolderToggleIcon.BackgroundTransparency = 1
+FolderToggleIcon.Position = UDim2.new(0, 5, 0, 0)
+FolderToggleIcon.Size = UDim2.new(0, 20, 0, 20)
+FolderToggleIcon.Image = "https://www.roblox.com/Thumbs/Asset.ashx?width=420&height=420&assetId=4731371541"
+
+local FolderContents = Instance.new("Frame")
+FolderContents.Name = "Objects"
+FolderContents.Parent = FolderPrefab
+FolderContents.BackgroundColor3 = Color3.new(1, 1, 1)
+FolderContents.BackgroundTransparency = 1
+FolderContents.Position = UDim2.new(0, 10, 0, 25)
+FolderContents.Size = UDim2.new(1, -10, 1, -25)
+FolderContents.Visible = false
+
+local FolderContentsLayout = Instance.new("UIListLayout")
+FolderContentsLayout.Parent = FolderContents
+FolderContentsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+FolderContentsLayout.Padding = UDim.new(0, 5)
+
+local HorizontalAlignmentPrefab = Instance.new("Frame")
+HorizontalAlignmentPrefab.Name = "HorizontalAlignment"
+HorizontalAlignmentPrefab.Parent = Prefabs
+HorizontalAlignmentPrefab.BackgroundColor3 = Color3.new(1, 1, 1)
+HorizontalAlignmentPrefab.BackgroundTransparency = 1
+HorizontalAlignmentPrefab.Size = UDim2.new(1, 0, 0, 20)
+
+local HorizontalAlignmentLayout = Instance.new("UIListLayout")
+HorizontalAlignmentLayout.Parent = HorizontalAlignmentPrefab
+HorizontalAlignmentLayout.FillDirection = Enum.FillDirection.Horizontal
+HorizontalAlignmentLayout.SortOrder = Enum.SortOrder.LayoutOrder
+HorizontalAlignmentLayout.Padding = UDim.new(0, 5)
+
+local ConsolePrefab = Instance.new("ImageLabel")
+ConsolePrefab.Name = "Console"
+ConsolePrefab.Parent = Prefabs
+ConsolePrefab.BackgroundColor3 = Color3.new(1, 1, 1)
+ConsolePrefab.BackgroundTransparency = 1
+ConsolePrefab.Size = UDim2.new(1, 0, 0, 200)
+ConsolePrefab.Image = "rbxassetid://2851928141"
+ConsolePrefab.ImageColor3 = Color3.new(0.129412, 0.133333, 0.141176)
+ConsolePrefab.ScaleType = Enum.ScaleType.Slice
+ConsolePrefab.SliceCenter = Rect.new(8, 8, 8, 8)
+
+local ConsoleScroller = Instance.new("ScrollingFrame")
+ConsoleScroller.Parent = ConsolePrefab
+ConsoleScroller.BackgroundColor3 = Color3.new(1, 1, 1)
+ConsoleScroller.BackgroundTransparency = 1
+ConsoleScroller.BorderSizePixel = 0
+ConsoleScroller.Size = UDim2.new(1, 0, 1, 1)
+ConsoleScroller.CanvasSize = UDim2.new(0, 0, 0, 0)
+ConsoleScroller.ScrollBarThickness = 4
+
+local SourceTextBox = Instance.new("TextBox")
+SourceTextBox.Name = "Source"
+SourceTextBox.Parent = ConsoleScroller
+SourceTextBox.BackgroundColor3 = Color3.new(1, 1, 1)
+SourceTextBox.BackgroundTransparency = 1
+SourceTextBox.Position = UDim2.new(0, 40, 0, 0)
+SourceTextBox.Size = UDim2.new(1, -40, 0, 10000)
+SourceTextBox.ZIndex = 3
+SourceTextBox.ClearTextOnFocus = false
+SourceTextBox.Font = Enum.Font.Code
+SourceTextBox.MultiLine = true
+SourceTextBox.PlaceholderColor3 = Color3.new(0.8, 0.8, 0.8)
+SourceTextBox.Text = ""
+SourceTextBox.TextColor3 = Color3.new(1, 1, 1)
+SourceTextBox.TextSize = 15
+SourceTextBox.TextStrokeColor3 = Color3.new(1, 1, 1)
+SourceTextBox.TextWrapped = true
+SourceTextBox.TextXAlignment = Enum.TextXAlignment.Left
+SourceTextBox.TextYAlignment = Enum.TextYAlignment.Top
+
+local function makeSyntaxLayer(name, color, zindex)
+    local layer = Instance.new("TextLabel")
+    layer.Name = name
+    layer.Parent = SourceTextBox
+    layer.BackgroundColor3 = Color3.new(1, 1, 1)
+    layer.BackgroundTransparency = 1
+    layer.Size = UDim2.new(1, 0, 1, 0)
+    layer.ZIndex = zindex or 5
+    layer.Font = Enum.Font.Code
+    layer.Text = ""
+    layer.TextColor3 = color
+    layer.TextSize = 15
+    layer.TextXAlignment = Enum.TextXAlignment.Left
+    layer.TextYAlignment = Enum.TextYAlignment.Top
+    return layer
+end
+
+makeSyntaxLayer("Comments",        Color3.new(0.231373, 0.784314, 0.231373))
+makeSyntaxLayer("Globals",         Color3.new(0.517647, 0.839216, 0.968628))
+makeSyntaxLayer("Keywords",        Color3.new(0.972549, 0.427451, 0.486275))
+makeSyntaxLayer("RemoteHighlight", Color3.new(0, 0.568627, 1))
+makeSyntaxLayer("Strings",         Color3.new(0.678431, 0.945098, 0.584314))
+makeSyntaxLayer("Tokens",          Color3.new(1, 1, 1))
+makeSyntaxLayer("Numbers",         Color3.new(1, 0.776471, 0), 4)
+makeSyntaxLayer("Info",            Color3.new(0, 0.635294, 1))
+
+local LineNumbers = Instance.new("TextLabel")
+LineNumbers.Name = "Lines"
+LineNumbers.Parent = ConsoleScroller
+LineNumbers.BackgroundColor3 = Color3.new(1, 1, 1)
+LineNumbers.BackgroundTransparency = 1
+LineNumbers.BorderSizePixel = 0
+LineNumbers.Size = UDim2.new(0, 40, 0, 10000)
+LineNumbers.ZIndex = 4
+LineNumbers.Font = Enum.Font.Code
+LineNumbers.Text = "1\n"
+LineNumbers.TextColor3 = Color3.new(1, 1, 1)
+LineNumbers.TextSize = 15
+LineNumbers.TextWrapped = true
+LineNumbers.TextYAlignment = Enum.TextYAlignment.Top
+
+local ColorPickerPrefab = Instance.new("ImageLabel")
+ColorPickerPrefab.Name = "ColorPicker"
+ColorPickerPrefab.Parent = Prefabs
+ColorPickerPrefab.BackgroundColor3 = Color3.new(1, 1, 1)
+ColorPickerPrefab.BackgroundTransparency = 1
+ColorPickerPrefab.Size = UDim2.new(0, 180, 0, 110)
+ColorPickerPrefab.Image = "rbxassetid://2851929490"
+ColorPickerPrefab.ImageColor3 = Color3.new(0.203922, 0.207843, 0.219608)
+ColorPickerPrefab.ScaleType = Enum.ScaleType.Slice
+ColorPickerPrefab.SliceCenter = Rect.new(4, 4, 4, 4)
+
+local ColorPalette = Instance.new("ImageLabel")
+ColorPalette.Name = "Palette"
+ColorPalette.Parent = ColorPickerPrefab
+ColorPalette.BackgroundColor3 = Color3.new(1, 1, 1)
+ColorPalette.BackgroundTransparency = 1
+ColorPalette.Position = UDim2.new(0.05, 0, 0.05, 0)
+ColorPalette.Size = UDim2.new(0, 100, 0, 100)
+ColorPalette.Image = "rbxassetid://698052001"
+ColorPalette.ScaleType = Enum.ScaleType.Slice
+ColorPalette.SliceCenter = Rect.new(4, 4, 4, 4)
+
+local PaletteIndicator = Instance.new("ImageLabel")
+PaletteIndicator.Name = "Indicator"
+PaletteIndicator.Parent = ColorPalette
+PaletteIndicator.BackgroundColor3 = Color3.new(1, 1, 1)
+PaletteIndicator.BackgroundTransparency = 1
+PaletteIndicator.Size = UDim2.new(0, 5, 0, 5)
+PaletteIndicator.ZIndex = 2
+PaletteIndicator.Image = "rbxassetid://2851926732"
+PaletteIndicator.ImageColor3 = Color3.new(0, 0, 0)
+PaletteIndicator.ScaleType = Enum.ScaleType.Slice
+PaletteIndicator.SliceCenter = Rect.new(12, 12, 12, 12)
+
+local ColorSample = Instance.new("ImageLabel")
+ColorSample.Name = "Sample"
+ColorSample.Parent = ColorPickerPrefab
+ColorSample.BackgroundColor3 = Color3.new(1, 1, 1)
+ColorSample.BackgroundTransparency = 1
+ColorSample.Position = UDim2.new(0.8, 0, 0.05, 0)
+ColorSample.Size = UDim2.new(0, 25, 0, 25)
+ColorSample.Image = "rbxassetid://2851929490"
+ColorSample.ScaleType = Enum.ScaleType.Slice
+ColorSample.SliceCenter = Rect.new(4, 4, 4, 4)
+
+local SaturationBar = Instance.new("ImageLabel")
+SaturationBar.Name = "Saturation"
+SaturationBar.Parent = ColorPickerPrefab
+SaturationBar.BackgroundColor3 = Color3.new(1, 1, 1)
+SaturationBar.Position = UDim2.new(0.65, 0, 0.05, 0)
+SaturationBar.Size = UDim2.new(0, 15, 0, 100)
+SaturationBar.Image = "rbxassetid://3641079629"
+
+local SaturationIndicator = Instance.new("Frame")
+SaturationIndicator.Name = "Indicator"
+SaturationIndicator.Parent = SaturationBar
+SaturationIndicator.BackgroundColor3 = Color3.new(1, 1, 1)
+SaturationIndicator.BorderSizePixel = 0
+SaturationIndicator.Size = UDim2.new(0, 20, 0, 2)
+SaturationIndicator.ZIndex = 2
+
+local SwitchPrefab = Instance.new("TextButton")
+SwitchPrefab.Name = "Switch"
+SwitchPrefab.Parent = Prefabs
+SwitchPrefab.BackgroundColor3 = Color3.new(1, 1, 1)
+SwitchPrefab.BackgroundTransparency = 1
+SwitchPrefab.BorderSizePixel = 0
+SwitchPrefab.Position = UDim2.new(0.229411766, 0, 0.20714286, 0)
+SwitchPrefab.Size = UDim2.new(0, 20, 0, 20)
+SwitchPrefab.ZIndex = 2
+SwitchPrefab.Font = Enum.Font.SourceSans
+SwitchPrefab.Text = ""
+SwitchPrefab.TextColor3 = Color3.new(1, 1, 1)
+SwitchPrefab.TextSize = 14
+
+local SwitchBackground = Instance.new("ImageLabel")
+SwitchBackground.Name = "TextButton_Roundify_4px"
+SwitchBackground.Parent = SwitchPrefab
+SwitchBackground.BackgroundColor3 = Color3.new(1, 1, 1)
+SwitchBackground.BackgroundTransparency = 1
+SwitchBackground.Size = UDim2.new(1, 0, 1, 0)
+SwitchBackground.Image = "rbxassetid://2851929490"
+SwitchBackground.ImageColor3 = Color3.new(0.160784, 0.290196, 0.478431)
+SwitchBackground.ImageTransparency = 0.5
+SwitchBackground.ScaleType = Enum.ScaleType.Slice
+SwitchBackground.SliceCenter = Rect.new(4, 4, 4, 4)
+
+local SwitchTitle = Instance.new("TextLabel")
+SwitchTitle.Name = "Title"
+SwitchTitle.Parent = SwitchPrefab
+SwitchTitle.BackgroundColor3 = Color3.new(1, 1, 1)
+SwitchTitle.BackgroundTransparency = 1
+SwitchTitle.Position = UDim2.new(1.2, 0, 0, 0)
+SwitchTitle.Size = UDim2.new(0, 20, 0, 20)
+SwitchTitle.Font = Enum.Font.FredokaOne
+SwitchTitle.Text = "Switch"
+SwitchTitle.TextColor3 = Color3.new(0.784314, 0.784314, 0.784314)
+SwitchTitle.TextSize = 14
+SwitchTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+local ButtonPrefab = Instance.new("TextButton")
+ButtonPrefab.Name = "Button"
+ButtonPrefab.Parent = Prefabs
+ButtonPrefab.BackgroundColor3 = Color3.new(0.160784, 0.290196, 0.478431)
+ButtonPrefab.BackgroundTransparency = 1
+ButtonPrefab.BorderSizePixel = 0
+ButtonPrefab.Size = UDim2.new(0, 91, 0, 20)
+ButtonPrefab.ZIndex = 2
+ButtonPrefab.Font = Enum.Font.FredokaOne
+ButtonPrefab.TextColor3 = Color3.new(1, 1, 1)
+ButtonPrefab.TextSize = 14
+
+local ButtonBackground = Instance.new("ImageLabel")
+ButtonBackground.Name = "TextButton_Roundify_4px"
+ButtonBackground.Parent = ButtonPrefab
+ButtonBackground.BackgroundColor3 = Color3.new(1, 1, 1)
+ButtonBackground.BackgroundTransparency = 1
+ButtonBackground.Size = UDim2.new(1, 0, 1, 0)
+ButtonBackground.Image = "rbxassetid://2851929490"
+ButtonBackground.ImageColor3 = Color3.new(0.160784, 0.290196, 0.478431)
+ButtonBackground.ScaleType = Enum.ScaleType.Slice
+ButtonBackground.SliceCenter = Rect.new(4, 4, 4, 4)
+
+local DropdownItemPrefab = Instance.new("TextButton")
+DropdownItemPrefab.Name = "DropdownButton"
+DropdownItemPrefab.Parent = Prefabs
+DropdownItemPrefab.BackgroundColor3 = Color3.new(0.129412, 0.133333, 0.141176)
+DropdownItemPrefab.BorderSizePixel = 0
+DropdownItemPrefab.Size = UDim2.new(1, 0, 0, 20)
+DropdownItemPrefab.ZIndex = 3
+DropdownItemPrefab.Font = Enum.Font.FredokaOne
+DropdownItemPrefab.Text = "      Button"
+DropdownItemPrefab.TextColor3 = Color3.new(0.784314, 0.784314, 0.784314)
+DropdownItemPrefab.TextSize = 14
+DropdownItemPrefab.TextXAlignment = Enum.TextXAlignment.Left
+
+local KeybindPrefab = Instance.new("ImageLabel")
+KeybindPrefab.Name = "Keybind"
+KeybindPrefab.Parent = Prefabs
+KeybindPrefab.BackgroundColor3 = Color3.new(1, 1, 1)
+KeybindPrefab.BackgroundTransparency = 1
+KeybindPrefab.Size = UDim2.new(0, 200, 0, 20)
+KeybindPrefab.Image = "rbxassetid://2851929490"
+KeybindPrefab.ImageColor3 = Color3.new(0.203922, 0.207843, 0.219608)
+KeybindPrefab.ScaleType = Enum.ScaleType.Slice
+KeybindPrefab.SliceCenter = Rect.new(4, 4, 4, 4)
+
+local KeybindTitle = Instance.new("TextLabel")
+KeybindTitle.Name = "Title"
+KeybindTitle.Parent = KeybindPrefab
+KeybindTitle.BackgroundColor3 = Color3.new(1, 1, 1)
+KeybindTitle.BackgroundTransparency = 1
+KeybindTitle.Size = UDim2.new(0, 0, 1, 0)
+KeybindTitle.Font = Enum.Font.FredokaOne
+KeybindTitle.Text = "Keybind"
+KeybindTitle.TextColor3 = Color3.new(0.784314, 0.784314, 0.784314)
+KeybindTitle.TextSize = 14
+KeybindTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+local KeybindInput = Instance.new("TextButton")
+KeybindInput.Name = "Input"
+KeybindInput.Parent = KeybindPrefab
+KeybindInput.BackgroundColor3 = Color3.new(1, 1, 1)
+KeybindInput.BackgroundTransparency = 1
+KeybindInput.BorderSizePixel = 0
+KeybindInput.Position = UDim2.new(1, -85, 0, 2)
+KeybindInput.Size = UDim2.new(0, 80, 1, -4)
+KeybindInput.ZIndex = 2
+KeybindInput.Font = Enum.Font.FredokaOne
+KeybindInput.Text = "RShift"
+KeybindInput.TextColor3 = Color3.new(0.784314, 0.784314, 0.784314)
+KeybindInput.TextSize = 12
+KeybindInput.TextWrapped = true
+
+local KeybindInputBackground = Instance.new("ImageLabel")
+KeybindInputBackground.Name = "Input_Roundify_4px"
+KeybindInputBackground.Parent = KeybindInput
+KeybindInputBackground.BackgroundColor3 = Color3.new(1, 1, 1)
+KeybindInputBackground.BackgroundTransparency = 1
+KeybindInputBackground.Size = UDim2.new(1, 0, 1, 0)
+KeybindInputBackground.Image = "rbxassetid://2851929490"
+KeybindInputBackground.ImageColor3 = Color3.new(0.290196, 0.294118, 0.313726)
+KeybindInputBackground.ScaleType = Enum.ScaleType.Slice
+KeybindInputBackground.SliceCenter = Rect.new(4, 4, 4, 4)
+
+local connections = {}
+local bindingState = { active = false }
+
+local function trackConnection(conn)
+    table.insert(connections, conn)
+    return conn
+end
+
+local function disconnectAll()
+    for _, conn in ipairs(connections) do
+        if conn.Connected then conn:Disconnect() end
+    end
+    connections = {}
+end
+
+trackConnection(UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    local key = typeof(Config.toggle_key) == "EnumItem" and Config.toggle_key or Enum.KeyCode.RightShift
+    if input.KeyCode == key and script.Parent and not gameProcessed then
+        script.Parent.Enabled = not script.Parent.Enabled
+    end
+end))
+
+local function tween(instance, properties, duration)
+    duration = duration or 0.1
+    if duration == 0 then
+        for prop, value in pairs(properties) do instance[prop] = value end
+        return
+    end
+    local t = TweenService:Create(instance, TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), properties)
+    t:Play()
+    return t
+end
+
+local function applyColor(instance, colors, rotation)
+    local existing = instance:FindFirstChild("UIGradient")
+    if existing then existing:Destroy() end
+    if typeof(colors) == "Color3" then colors = { colors } end
+    if not colors or #colors == 0 then return end
+    if #colors == 1 then
+        if instance:IsA("ImageLabel") or instance:IsA("ImageButton") then
+            instance.ImageColor3 = colors[1]
+        else
+            instance.BackgroundColor3 = colors[1]
+        end
+        return
+    end
+    local gradient = Instance.new("UIGradient")
+    gradient.Parent = instance
+    gradient.Rotation = rotation or 0
+    local kp = {}
+    if #colors == 2 then
+        kp = { ColorSequenceKeypoint.new(0, colors[1]), ColorSequenceKeypoint.new(1, colors[2]) }
+    elseif #colors >= 3 then
+        kp = { ColorSequenceKeypoint.new(0, colors[1]), ColorSequenceKeypoint.new(0.5, colors[2]), ColorSequenceKeypoint.new(1, colors[3]) }
+    end
+    gradient.Color = ColorSequence.new(kp)
+    if instance:IsA("ImageLabel") or instance:IsA("ImageButton") then
+        instance.ImageColor3 = Color3.new(1, 1, 1)
+    else
+        instance.BackgroundColor3 = Color3.new(1, 1, 1)
+    end
+end
+
+local function rgbToHsv(r, g, b)
+    r, g, b = r / 255, g / 255, b / 255
+    local max, min = math.max(r, g, b), math.min(r, g, b)
+    local h, s, v = 0, 0, max
+    local delta = max - min
+    s = max == 0 and 0 or delta / max
+    if max ~= min then
+        if max == r then h = (g - b) / delta + (g < b and 6 or 0)
+        elseif max == g then h = (b - r) / delta + 2
+        elseif max == b then h = (r - g) / delta + 4
+        end
+        h = h / 6
+    end
+    return h, s, v
+end
+
+local function safeGet(instance, property)
+    local ok, value = pcall(function() return instance[tostring(property)] end)
+    return ok and value
+end
+
+local function getTextWidth(label)
+    return label.TextBounds.X + 15
+end
+
+local function getMousePosition()
+    return Vector2.new(UserInputService:GetMouseLocation().X + 1, UserInputService:GetMouseLocation().Y - 35)
+end
+
+local function playRipple(parent, mouseX, mouseY)
+    task.spawn(function()
+        parent.ClipsDescendants = true
+        local circle = Prefabs:FindFirstChild("Circle"):Clone()
+        circle.Parent = parent
+        circle.ZIndex = 1000
+        circle.Position = UDim2.new(0, mouseX - circle.AbsolutePosition.X, 0, mouseY - circle.AbsolutePosition.Y)
+        local size = math.max(parent.AbsoluteSize.X, parent.AbsoluteSize.Y) * 1.5
+        circle:TweenSizeAndPosition(UDim2.new(0, size, 0, size), UDim2.new(0.5, -size / 2, 0.5, -size / 2), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.5, false)
+        tween(circle, { ImageTransparency = 1 }, 0.5)
+        task.wait(0.5)
+        circle:Destroy()
+    end)
+end
+
+local windowCount = 0
+local Library = {}
+
+local function formatWindows()
+    local tempLayout = Prefabs:FindFirstChild("UIListLayout"):Clone()
+    tempLayout.Parent = WindowsContainer
+    local positions = {}
+    for _, child in ipairs(WindowsContainer:GetChildren()) do
+        if not child:IsA("UIListLayout") then positions[child] = child.AbsolutePosition end
+    end
+    tempLayout:Destroy()
+    for child, pos in pairs(positions) do
+        child.Position = UDim2.new(0, pos.X, 0, pos.Y)
+    end
+end
+
+function Library:FormatWindows() formatWindows() end
+
+function Library:AddWindow(title, options)
+    windowCount = windowCount + 1
+    local isDropdownOpen = false
+    title = tostring(title or "New Window")
+    options = typeof(options) == "table" and options or Config
+    options.tween_time = options.tween_time or 0.1
+    options.title_bar = options.title_bar or { Color3.fromRGB(41, 74, 122) }
+    if typeof(options.title_bar) == "Color3" then options.title_bar = { options.title_bar } end
+    options.title_bar_transparency = options.title_bar_transparency or 0
+    options.background = options.background or { Color3.new(0.08, 0.09, 0.1) }
+    if typeof(options.background) == "Color3" then options.background = { options.background } end
+    options.background_transparency = options.background_transparency or 0.1
+    if not options.main_color then options.main_color = options.title_bar[1] end
+
+    local window = Prefabs:FindFirstChild("Window"):Clone()
+    window.Parent = WindowsContainer
+    window:FindFirstChild("Title").Text = title
+    window.Size = UDim2.new(0, options.min_size.X, 0, options.min_size.Y)
+    window.ZIndex = window.ZIndex + windowCount * 10
+
+    do
+        local bar = window:FindFirstChild("Bar")
+        local barTitle = bar:FindFirstChild("Title")
+        local toggle = bar:FindFirstChild("Toggle")
+        local base = bar:FindFirstChild("Base")
+        local top = bar:FindFirstChild("Top")
+        local tabSelection = window:FindFirstChild("TabSelection")
+        local tabFrame = tabSelection:FindFirstChild("Frame")
+        local barHeight = 24
+        local barPadding = (barHeight - 18) / 2
+        bar.Size = UDim2.new(1, 0, 0, barHeight)
+        bar.Position = UDim2.new(0, 0, 0, 0)
+        if base then base:Destroy() end
+        if top then top:Destroy() end
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 5)
+        corner.Parent = bar
+        if toggle then toggle.Position = UDim2.new(0, 5, 0, barPadding) end
+        if barTitle then
+            barTitle.Position = UDim2.new(0, 25, 0, barPadding)
+            barTitle.Size = UDim2.new(1, -30, 1, -barPadding * 2)
+            barTitle.TextXAlignment = Enum.TextXAlignment.Center
+        end
+        bar.BackgroundTransparency = options.title_bar_transparency
+        applyColor(bar, options.title_bar, 0)
+        if tabSelection then
+            tabSelection.Size = UDim2.new(1, -30, 0, 22)
+            tabSelection.Position = UDim2.new(0, 15, 0, 28)
+            local tabCorner = Instance.new("UICorner")
+            tabCorner.CornerRadius = UDim.new(0, 6)
+            tabCorner.Parent = tabSelection
+            tabSelection.ImageTransparency = 0.4
+            applyColor(tabSelection, options.title_bar, 45)
+            local scrolling = tabSelection:FindFirstChild("TabScrolling")
+            if scrolling then
+                local buttons = scrolling:FindFirstChild("TabButtons")
+                if buttons then
+                    local layout = buttons:FindFirstChildOfClass("UIListLayout")
+                    if layout then
+                        layout.VerticalAlignment = Enum.VerticalAlignment.Center
+                        layout.Padding = UDim.new(0, 12)
+                    end
+                end
+            end
+            if tabFrame then tabFrame:Destroy() end
+        end
+        window.ImageTransparency = options.background_transparency
+        applyColor(window, options.background, 45)
+        local tabsContainer = window:FindFirstChild("Tabs")
+        toggle.MouseButton1Click:Connect(function()
+            if tabsContainer.Visible then
+                tabsContainer.Visible = false
+                tween(window, { Size = UDim2.new(0, window.AbsoluteSize.X, 0, barHeight) }, options.tween_time)
+            else
+                tabsContainer.Visible = true
+                window.Size = UDim2.new(0, window.AbsoluteSize.X, 0, options.min_size.Y)
+            end
+        end)
+    end
+
+    local resizer = window:WaitForChild("Resizer")
+    local windowAPI = {}
+
+    do
+        local originalCursor = Mouse.Icon
+        local isHoveringResizer = false
+        resizer.MouseEnter:Connect(function()
+            window.Draggable = false
+            if options.can_resize then originalCursor = Mouse.Icon end
+            isHoveringResizer = true
+        end)
+        resizer.MouseLeave:Connect(function()
+            isHoveringResizer = false
+            if options.can_resize then Mouse.Icon = originalCursor end
+            window.Draggable = true
+        end)
+        local isMouseDown = false
+        local heartbeatConn
+        UserInputService.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                isMouseDown = true
+                if isHoveringResizer and resizer.Active and options.can_resize then
+                    heartbeatConn = RunService.Heartbeat:Connect(function()
+                        if not isMouseDown or not resizer.Active then
+                            if heartbeatConn then heartbeatConn:Disconnect(); heartbeatConn = nil end
+                            return
+                        end
+                        local pos = getMousePosition()
+                        local w = math.max(options.min_size.X, pos.X - window.AbsolutePosition.X)
+                        local h = math.max(options.min_size.Y, pos.Y - window.AbsolutePosition.Y)
+                        window.Size = UDim2.new(0, w, 0, h)
+                    end)
+                end
+            end
+        end)
+        UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                isMouseDown = false
+                if heartbeatConn then heartbeatConn:Disconnect(); heartbeatConn = nil end
+            end
+        end)
+    end
+
+    do
+        local toggleBtn = window:FindFirstChild("Bar"):FindFirstChild("Toggle")
+        local isExpanded = true
+        local canAnimate = true
+        local savedVisibility = {}
+        local savedHeight
+        toggleBtn.MouseButton1Click:Connect(function()
+            if not canAnimate then return end
+            canAnimate = false
+            if isExpanded then
+                savedVisibility = {}
+                for _, child in ipairs(window:FindFirstChild("Tabs"):GetChildren()) do
+                    savedVisibility[child] = child.Visible
+                    child.Visible = false
+                end
+                resizer.Active = false
+                savedHeight = window.AbsoluteSize.Y
+                tween(toggleBtn, { Rotation = 0 }, options.tween_time)
+                tween(window, { Size = UDim2.new(0, window.AbsoluteSize.X, 0, 26) }, options.tween_time)
+            else
+                for child, wasVisible in pairs(savedVisibility) do child.Visible = wasVisible end
+                resizer.Active = true
+                tween(toggleBtn, { Rotation = 0 }, options.tween_time)
+                tween(window, { Size = UDim2.new(0, window.AbsoluteSize.X, 0, savedHeight) }, options.tween_time)
+            end
+            isExpanded = not isExpanded
+            task.delay(options.tween_time, function() canAnimate = true end)
+        end)
+    end
+
+    do
+        local tabsContainer = window:FindFirstChild("Tabs")
+        local tabBar = window:FindFirstChild("TabSelection")
+        local tabScrolling = tabBar:FindFirstChild("TabScrolling")
+        local tabButtonsRow = tabScrolling:FindFirstChild("TabButtons")
+        local activeTabBtn = nil
+        local activeHbConn = nil
+
+        local function updateTabBarWidth()
+            local totalWidth = 0
+            local layoutPad = tabButtonsRow:FindFirstChildOfClass("UIListLayout").Padding.Offset or 0
+            for _, child in ipairs(tabButtonsRow:GetChildren()) do
+                if child:IsA("TextButton") then totalWidth = totalWidth + child.AbsoluteSize.X + layoutPad end
+            end
+            tabButtonsRow.Size = UDim2.new(0, totalWidth, 1, 0)
+            if tabScrolling then tabScrolling.CanvasSize = UDim2.new(0, totalWidth, 0, 0) end
+        end
+
+        function windowAPI:AddTab(tabName)
+            local tabAPI = {}
+            tabName = tostring(tabName or "New Tab")
+            tabBar.Visible = true
+
+            local tabBtn = Prefabs:FindFirstChild("TabButton"):Clone()
+            tabBtn.Parent = tabButtonsRow
+            tabBtn.Text = tabName
+            tabBtn.Size = UDim2.new(0, getTextWidth(tabBtn) + 20, 0, 18)
+            tabBtn.ZIndex = tabBtn.ZIndex + windowCount * 10
+            tabBtn.BackgroundTransparency = 1
+            tabBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+            tabBtn.TextSize = 13
+            tabBtn.Font = Enum.Font.FredokaOne
+
+            local btnBg = tabBtn:GetChildren()[1]
+            btnBg.ZIndex = tabBtn.ZIndex + windowCount * 10
+            btnBg.ImageTransparency = 1
+
+            local btnCorner = Instance.new("UICorner")
+            btnCorner.CornerRadius = UDim.new(0, 4)
+            btnCorner.Parent = tabBtn
+
+            local btnStroke = Instance.new("UIStroke")
+            btnStroke.Color = Color3.new(0, 0, 0)
+            btnStroke.Thickness = 1.2
+            btnStroke.Transparency = 0.7
+            btnStroke.Parent = tabBtn
+
+            local tabOutline = Instance.new("Frame")
+            tabOutline.Name = "TabOutline"
+            tabOutline.Size = UDim2.new(1, 0, 1, 0)
+            tabOutline.BackgroundTransparency = 1
+            tabOutline.BorderSizePixel = 2
+            tabOutline.BorderColor3 = options.main_color
+            tabOutline.ZIndex = tabBtn.ZIndex + 10
+            tabOutline.Visible = false
+            local outlineCorner = Instance.new("UICorner")
+            outlineCorner.CornerRadius = UDim.new(0, 4)
+            outlineCorner.Parent = tabOutline
+            tabOutline.Parent = tabBtn
+
+            local tabContent = Prefabs:FindFirstChild("Tab"):Clone()
+            tabContent.Parent = tabsContainer
+            tabContent.ZIndex = tabContent.ZIndex + windowCount * 10
+            tabContent.Visible = false
+            tabContent.ClipsDescendants = false
+            tabContent.Size = UDim2.new(1, 0, 1, 0)
+            tabContent.BackgroundTransparency = 1
+
+            local scroller = Instance.new("ScrollingFrame")
+            scroller.Name = "TabScroller"
+            scroller.Parent = tabContent
+            scroller.Size = UDim2.new(1, 0, 1, 0)
+            scroller.BackgroundTransparency = 1
+            scroller.BorderSizePixel = 0
+            scroller.ScrollBarThickness = 4
+            scroller.CanvasSize = UDim2.new(0, 0, 0, 0)
+            scroller.ZIndex = tabContent.ZIndex
+            scroller.ScrollBarImageColor3 = Color3.fromRGB(255, 0, 0)
+            scroller.ScrollBarImageTransparency = 0.4
+
+            local layout = tabContent:FindFirstChildOfClass("UIListLayout")
+            if layout then layout.Parent = scroller end
+
+            local function updateScrollerHeight()
+                scroller.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 10)
+            end
+            layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateScrollerHeight)
+            updateScrollerHeight()
+
+            task.defer(updateTabBarWidth)
+
+            local function spawnTabParticles(tab)
+                if tab ~= activeTabBtn then return end
+                local size = tab.AbsoluteSize
+                for _ = 1, 3 do
+                    task.spawn(function()
+                        local p = Instance.new("Frame")
+                        p.Name = "SimpleParticle"
+                        p.Size = UDim2.new(0, 1.5, 0, 1.5)
+                        p.AnchorPoint = Vector2.new(0.5, 0.5)
+                        p.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        p.BorderSizePixel = 0
+                        p.ZIndex = tab.ZIndex + 15
+                        local pc = Instance.new("UICorner")
+                        pc.CornerRadius = UDim.new(1, 0)
+                        pc.Parent = p
+                        local side = math.random(1, 4)
+                        local px, py = 0, 0
+                        if side == 1 then px = math.random(5, size.X - 5); py = 1
+                        elseif side == 2 then px = size.X - 1; py = math.random(5, size.Y - 5)
+                        elseif side == 3 then px = math.random(5, size.X - 5); py = size.Y - 1
+                        else px = 1; py = math.random(5, size.Y - 5) end
+                        p.Position = UDim2.new(0, px, 0, py)
+                        p.Parent = tab
+                        local cx, cy = size.X / 2, size.Y / 2
+                        local dx, dy = px - cx, py - cy
+                        local len = math.sqrt(dx * dx + dy * dy)
+                        dx, dy = dx / len, dy / len
+                        local pt = TweenService:Create(p, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                            Position = UDim2.new(0, px + dx * 6, 0, py + dy * 6),
+                            BackgroundTransparency = 1
+                        })
+                        pt:Play()
+                        task.wait(0.5)
+                        if p and p.Parent then p:Destroy() end
+                    end)
+                end
+            end
+
+            local function startParticleLoop()
+                if activeHbConn then activeHbConn:Disconnect() end
+                activeHbConn = RunService.Heartbeat:Connect(function()
+                    if activeTabBtn and activeTabBtn.Parent then
+                        spawnTabParticles(activeTabBtn)
+                        task.wait(0.2)
+                    end
+                end)
+            end
+
+            local function selectTab()
+                if isDropdownOpen then return end
+                if activeTabBtn and activeTabBtn ~= tabBtn then
+                    local prevOutline = activeTabBtn:FindFirstChild("TabOutline")
+                    if prevOutline then prevOutline.Visible = false end
+                    activeTabBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+                end
+                for _, child in ipairs(tabsContainer:GetChildren()) do
+                    if child:IsA("Frame") then child.Visible = false end
+                end
+                activeTabBtn = tabBtn
+                local outline = tabBtn:FindFirstChild("TabOutline")
+                if outline then outline.Visible = true; outline.BorderColor3 = options.main_color end
+                tabBtn.TextColor3 = Color3.new(1, 1, 1)
+                startParticleLoop()
+                tabContent.Visible = true
+            end
+
+            tabBtn.MouseButton1Click:Connect(selectTab)
+            tabBtn.MouseEnter:Connect(function()
+                if tabBtn ~= activeTabBtn then tabBtn.TextColor3 = Color3.fromRGB(230, 230, 230) end
+            end)
+            tabBtn.MouseLeave:Connect(function()
+                if tabBtn ~= activeTabBtn then tabBtn.TextColor3 = Color3.fromRGB(200, 200, 200) end
+            end)
+
+            function tabAPI:Show() selectTab() end
+
+            tabBtn.AncestryChanged:Connect(function()
+                if not tabBtn.Parent then
+                    if activeTabBtn == tabBtn then
+                        activeTabBtn = nil
+                        if activeHbConn then activeHbConn:Disconnect(); activeHbConn = nil end
+                    end
+                end
+            end)
+
+            if #tabButtonsRow:GetChildren() == 2 then selectTab() end
+
+            function tabAPI:AddLabel(text)
+                text = tostring(text or "New Label")
+                local label = Prefabs:FindFirstChild("Label"):Clone()
+                local parent = tabContent:FindFirstChild("TabScroller")
+                label.Parent = parent or tabContent
+                label.Text = text
+                label.Size = UDim2.new(0, getTextWidth(label), 0, 20)
+                label.ZIndex = label.ZIndex + windowCount * 10
+                return label
+            end
+
+            function tabAPI:AddButton(text, callback)
+                text = tostring(text or "New Button")
+                callback = typeof(callback) == "function" and callback or function() end
+                local btn = Prefabs:FindFirstChild("Button"):Clone()
+                local parent = tabContent:FindFirstChild("TabScroller")
+                btn.Parent = parent or tabContent
+                btn.Text = text
+                btn.Size = UDim2.new(0, getTextWidth(btn), 0, 20)
+                btn.ZIndex = btn.ZIndex + windowCount * 10
+                local bg = btn:GetChildren()[1]
+                bg.ZIndex = bg.ZIndex + windowCount * 10
+                bg.ImageTransparency = options.title_bar_transparency or 0
+                applyColor(bg, options.title_bar, 0)
+                btn.TextColor3 = Color3.new(1, 1, 1)
+                btn.MouseButton1Click:Connect(function()
+                    playRipple(btn, Mouse.X, Mouse.Y)
+                    pcall(callback)
+                end)
+                return btn
+            end
+
+            function tabAPI:AddSwitch(text, callback)
+                local switchAPI = {}
+                text = tostring(text or "New Switch")
+                callback = typeof(callback) == "function" and callback or function() end
+                local sw = Prefabs:FindFirstChild("Switch"):Clone()
+                local parent = tabContent:FindFirstChild("TabScroller")
+                sw.Parent = parent or tabContent
+                sw:FindFirstChild("Title").Text = text
+                sw:FindFirstChild("Title").ZIndex = sw:FindFirstChild("Title").ZIndex + windowCount * 10
+                sw.ZIndex = sw.ZIndex + windowCount * 10
+                local bg = sw:GetChildren()[1]
+                bg.ZIndex = bg.ZIndex + windowCount * 10
+                bg.ImageTransparency = options.title_bar_transparency or 0
+                applyColor(bg, options.title_bar, 0)
+                local state = false
+                sw.MouseButton1Click:Connect(function()
+                    state = not state
+                    sw.Text = state and utf8.char(10003) or ""
+                    pcall(callback, state)
+                end)
+                function switchAPI:Set(value)
+                    state = typeof(value) == "boolean" and value or false
+                    sw.Text = state and utf8.char(10003) or ""
+                    pcall(callback, state)
+                end
+                return switchAPI, sw
+            end
+
+            function tabAPI:AddTextBox(placeholder, callback, opts)
+                placeholder = tostring(placeholder or "New TextBox")
+                callback = typeof(callback) == "function" and callback or function() end
+                opts = typeof(opts) == "table" and opts or { clear = false }
+                opts.clear = opts.clear == true
+                local box = Prefabs:FindFirstChild("TextBox"):Clone()
+                box.Size = UDim2.new(0.5, -5, 0, 20)
+                local parent = tabContent:FindFirstChild("TabScroller")
+                box.Parent = parent or tabContent
+                box.PlaceholderText = placeholder
+                box.ZIndex = box.ZIndex + windowCount * 10
+                box.TextColor3 = Color3.new(1, 1, 1)
+                box.PlaceholderColor3 = Color3.fromRGB(200, 200, 200)
+                local bg = box:GetChildren()[1]
+                bg.ZIndex = bg.ZIndex + windowCount * 10
+                bg.ImageTransparency = options.title_bar_transparency or 0
+                applyColor(bg, options.title_bar, 0)
+                box.FocusLost:Connect(function(enterPressed)
+                    if enterPressed and #box.Text > 0 then
+                        pcall(callback, box.Text)
+                        if opts.clear then box.Text = "" end
+                    end
+                end)
+                return box
+            end
+
+            function tabAPI:AddSlider(text, callback, sliderOpts)
+                local sliderAPI = {}
+                text = tostring(text or "New Slider")
+                callback = typeof(callback) == "function" and callback or function() end
+                sliderOpts = typeof(sliderOpts) == "table" and sliderOpts or {}
+                sliderOpts.min = sliderOpts.min or 0
+                sliderOpts.max = sliderOpts.max or 100
+                sliderOpts.readonly = sliderOpts.readonly or false
+                local slider = Prefabs:FindFirstChild("Slider"):Clone()
+                local parent = tabContent:FindFirstChild("TabScroller")
+                slider.Parent = parent or tabContent
+                slider.ZIndex = slider.ZIndex + windowCount * 10
+                local titleLbl = slider:FindFirstChild("Title")
+                local fillBar = slider:FindFirstChild("Indicator")
+                local valueLbl = slider:FindFirstChild("Value")
+                titleLbl.ZIndex = titleLbl.ZIndex + windowCount * 10
+                fillBar.ZIndex = fillBar.ZIndex + windowCount * 10
+                valueLbl.ZIndex = valueLbl.ZIndex + windowCount * 10
+                titleLbl.Text = text
+                local isHovering = false
+                local isMouseDown = false
+                local hbConn
+                slider.MouseEnter:Connect(function() isHovering = true; window.Draggable = false end)
+                slider.MouseLeave:Connect(function() isHovering = false; window.Draggable = true end)
+                UserInputService.InputBegan:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        isMouseDown = true
+                        if isHovering and not sliderOpts.readonly then
+                            hbConn = RunService.Heartbeat:Connect(function()
+                                if not isMouseDown or isDropdownOpen then
+                                    if hbConn then hbConn:Disconnect(); hbConn = nil end
+                                    return
+                                end
+                                local pos = getMousePosition()
+                                local frac = math.clamp((pos.X - slider.AbsolutePosition.X) / slider.AbsoluteSize.X, 0, 1)
+                                fillBar.Size = UDim2.new(frac, 0, 0, 20)
+                                local val = math.floor((sliderOpts.max - sliderOpts.min) / 100 * math.floor(frac * 100) + sliderOpts.min)
+                                valueLbl.Text = tostring(val)
+                                pcall(callback, val)
+                            end)
+                        end
+                    end
+                end)
+                UserInputService.InputEnded:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        isMouseDown = false
+                        if hbConn then hbConn:Disconnect(); hbConn = nil end
+                    end
+                end)
+                function sliderAPI:Set(value)
+                    value = math.clamp(tonumber(value) or 0, 0, 100) / 100
+                    fillBar.Size = UDim2.new(value, 0, 0, 20)
+                    local val = math.floor((sliderOpts.max - sliderOpts.min) / 100 * math.floor(value * 100) + sliderOpts.min)
+                    valueLbl.Text = tostring(val)
+                    pcall(callback, val)
+                end
+                sliderAPI:Set(sliderOpts.min)
+                return sliderAPI, slider
+            end
+
+            function tabAPI:AddKeybind(text, callback, keybindOpts)
+                local keybindAPI = {}
+                text = tostring(text or "New Keybind")
+                callback = typeof(callback) == "function" and callback or function() end
+                keybindOpts = typeof(keybindOpts) == "table" and keybindOpts or {}
+                keybindOpts.standard = keybindOpts.standard or Enum.KeyCode.RightShift
+                local keybind = Prefabs:FindFirstChild("Keybind"):Clone()
+                local inputBtn = keybind:FindFirstChild("Input")
+                local titleLbl = keybind:FindFirstChild("Title")
+                keybind.ZIndex = keybind.ZIndex + windowCount * 10
+                inputBtn.ZIndex = inputBtn.ZIndex + windowCount * 10
+                inputBtn:GetChildren()[1].ZIndex = inputBtn:GetChildren()[1].ZIndex + windowCount * 10
+                titleLbl.ZIndex = titleLbl.ZIndex + windowCount * 10
+                local parent = tabContent:FindFirstChild("TabScroller")
+                keybind.Parent = parent or tabContent
+                titleLbl.Text = "  " .. text
+                keybind.Size = UDim2.new(0, getTextWidth(titleLbl) + 80, 0, 20)
+                local keyNameMap = {
+                    RightControl = "RightCtrl", LeftControl = "LeftCtrl",
+                    LeftShift = "LShift", RightShift = "RShift",
+                    MouseButton1 = "Mouse1", MouseButton2 = "Mouse2",
+                }
+                local currentKey = keybindOpts.standard
+                function keybindAPI:SetKeybind(key)
+                    inputBtn.Text = keyNameMap[key.Name] or key.Name
+                    currentKey = key
+                end
+                UserInputService.InputBegan:Connect(function(input, gameProcessed)
+                    if bindingState.active then
+                        task.defer(function() bindingState.active = false end)
+                        return
+                    end
+                    if input.KeyCode == currentKey and not gameProcessed then pcall(callback, currentKey) end
+                end)
+                keybindAPI:SetKeybind(keybindOpts.standard)
+                inputBtn.MouseButton1Click:Connect(function()
+                    if bindingState.active then return end
+                    inputBtn.Text = "..."
+                    bindingState.active = true
+                    local newInput = UserInputService.InputBegan:Wait()
+                    keybindAPI:SetKeybind(newInput.KeyCode)
+                end)
+                return keybindAPI, keybind
+            end
+
+            function tabAPI:AddDropdown(text, callback)
+                local dropdownAPI = {}
+                text = tostring(text or "New Dropdown")
+                callback = typeof(callback) == "function" and callback or function() end
+                local dropdown = Prefabs:FindFirstChild("Dropdown"):Clone()
+                local box = dropdown:FindFirstChild("Box")
+                local items = box:FindFirstChild("Objects")
+                local arrow = dropdown:FindFirstChild("Indicator")
+                dropdown.ZIndex = dropdown.ZIndex + windowCount * 10
+                box.ZIndex = box.ZIndex + windowCount * 10
+                items.ZIndex = items.ZIndex + windowCount * 10
+                arrow.ZIndex = arrow.ZIndex + windowCount * 10
+                dropdown.Size = UDim2.new(0.5, -5, 0, 20)
+                local dropBg = dropdown:GetChildren()[3]
+                dropBg.ZIndex = dropBg.ZIndex + windowCount * 10
+                dropBg.ImageTransparency = options.title_bar_transparency or 0
+                applyColor(dropBg, options.title_bar, 0)
+                box.ImageTransparency = options.background_transparency or 0.1
+                applyColor(box, options.background, 0)
+                local boxCorner = Instance.new("UICorner")
+                boxCorner.CornerRadius = UDim.new(0, 6)
+                boxCorner.Parent = box
+                items.BackgroundTransparency = 1
+                items.Position = UDim2.new(0, 0, 0, 0)
+                items.Size = UDim2.new(1, 0, 1, 0)
+                local parent = tabContent:FindFirstChild("TabScroller")
+                dropdown.Parent = parent or tabContent
+                dropdown.Text = "      " .. text
+                box.Size = UDim2.new(1, 0, 0, 0)
+                box.Position = UDim2.new(0, 0, 0, 25)
+                dropdown.TextColor3 = Color3.new(1, 1, 1)
+                local isOpen = false
+                local flippedUp = false
+                dropdown.MouseButton1Click:Connect(function()
+                    isOpen = not isOpen
+                    local itemCount = #items:GetChildren() - 1
+                    local targetH = math.min(itemCount * 20, 200)
+                    if itemCount >= 10 then items.CanvasSize = UDim2.new(0, 0, itemCount * 0.1, 0) end
+                    if isOpen then
+                        if isDropdownOpen then return end
+                        isDropdownOpen = true
+                        local spaceBelow = (window.AbsolutePosition.Y + window.AbsoluteSize.Y) - (dropdown.AbsolutePosition.Y + dropdown.AbsoluteSize.Y)
+                        if spaceBelow < targetH then
+                            flippedUp = true
+                            box.Position = UDim2.new(0, 0, 0, -targetH - 5)
+                            box.Size = UDim2.new(1, 0, 0, 0)
+                            tween(box, { Size = UDim2.new(1, 0, 0, targetH), Position = UDim2.new(0, 0, 0, -targetH - 5) }, options.tween_time)
+                        else
+                            flippedUp = false
+                            box.Position = UDim2.new(0, 0, 0, 25)
+                            box.Size = UDim2.new(1, 0, 0, 0)
+                            tween(box, { Size = UDim2.new(1, 0, 0, targetH) }, options.tween_time)
+                        end
+                        tween(arrow, { Rotation = 90 }, options.tween_time)
+                    else
+                        isDropdownOpen = false
+                        if flippedUp then
+                            local t = TweenService:Create(box, TweenInfo.new(options.tween_time, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = UDim2.new(1, 0, 0, 0), Position = UDim2.new(0, 0, 0, -5) })
+                            t:Play()
+                            t.Completed:Connect(function() box.Position = UDim2.new(0, 0, 0, 25) end)
+                        else
+                            tween(box, { Size = UDim2.new(1, 0, 0, 0) }, options.tween_time)
+                        end
+                        tween(arrow, { Rotation = -90 }, options.tween_time)
+                    end
+                end)
+                function dropdownAPI:Add(itemText)
+                    local itemAPI = {}
+                    itemText = tostring(itemText or "New Object")
+                    local item = Prefabs:FindFirstChild("DropdownButton"):Clone()
+                    item.Parent = items
+                    item.Text = "      " .. itemText
+                    item.ZIndex = item.ZIndex + windowCount * 10 + 5
+                    item.BackgroundTransparency = 1
+                    item.TextColor3 = Color3.new(1, 1, 1)
+                    item.BorderSizePixel = 0
+                    item.TextXAlignment = Enum.TextXAlignment.Left
+                    local existingCorner = item:FindFirstChildOfClass("UICorner")
+                    if existingCorner then existingCorner:Destroy() end
+                    local stroke = Instance.new("UIStroke")
+                    stroke.Color = Color3.new(0, 0, 0)
+                    stroke.Thickness = 1
+                    stroke.Transparency = 0.3
+                    stroke.Parent = item
+                    item.MouseEnter:Connect(function() item.BackgroundTransparency = 0.8; item.BackgroundColor3 = options.main_color end)
+                    item.MouseLeave:Connect(function() item.BackgroundTransparency = 1 end)
+                    if isOpen then
+                        local newH = math.min((#items:GetChildren() - 1) * 20, 200)
+                        if #items:GetChildren() - 1 >= 10 then items.CanvasSize = UDim2.new(0, 0, (#items:GetChildren() - 1) * 0.1, 0) end
+                        if flippedUp then
+                            tween(box, { Size = UDim2.new(1, 0, 0, newH), Position = UDim2.new(0, 0, 0, -newH - 5) }, options.tween_time)
+                        else
+                            tween(box, { Size = UDim2.new(1, 0, 0, newH) }, options.tween_time)
+                        end
+                    end
+                    item.MouseButton1Click:Connect(function()
+                        if isDropdownOpen then
+                            dropdown.Text = "      [ " .. itemText .. " ]"
+                            isDropdownOpen = false
+                            isOpen = false
+                            if flippedUp then
+                                local t = TweenService:Create(box, TweenInfo.new(options.tween_time, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = UDim2.new(1, 0, 0, 0), Position = UDim2.new(0, 0, 0, -5) })
+                                t:Play()
+                                t.Completed:Connect(function() box.Position = UDim2.new(0, 0, 0, 25) end)
+                            else
+                                tween(box, { Size = UDim2.new(1, 0, 0, 0) }, options.tween_time)
+                            end
+                            tween(arrow, { Rotation = -90 }, options.tween_time)
+                            pcall(callback, itemText)
+                        end
+                    end)
+                    function itemAPI:Remove() item:Destroy() end
+                    return item, itemAPI
+                end
+                function dropdownAPI:Remove(itemText)
+                    local item = items:FindFirstChild(itemText)
+                    if item then
+                        item:Destroy()
+                        if dropdownAPI.currentSelection == itemText then
+                            local first = items:GetChildren()[1]
+                            local newSel = first and first.Text or "No Selection"
+                            dropdownAPI.currentSelection = newSel
+                            dropdown.Text = "        [ " .. newSel .. " ]"
+                            pcall(callback, newSel)
+                        end
+                    end
+                end
+                return dropdownAPI, dropdown
+            end
+
+            function tabAPI:AddColorPicker(callback)
+                local pickerAPI = {}
+                callback = typeof(callback) == "function" and callback or function() end
+                local picker = Prefabs:FindFirstChild("ColorPicker"):Clone()
+                local parent = tabContent:FindFirstChild("TabScroller")
+                picker.Parent = parent or tabContent
+                picker.ZIndex = picker.ZIndex + windowCount * 10
+                local palette = picker:FindFirstChild("Palette")
+                local sample = picker:FindFirstChild("Sample")
+                local saturation = picker:FindFirstChild("Saturation")
+                palette.ZIndex = palette.ZIndex + windowCount * 10
+                sample.ZIndex = sample.ZIndex + windowCount * 10
+                saturation.ZIndex = saturation.ZIndex + windowCount * 10
+                local hue, sat, val = 0, 1, 1
+                local function updateColor()
+                    local color = Color3.fromHSV(hue, sat, val)
+                    sample.ImageColor3 = color
+                    saturation.ImageColor3 = Color3.fromHSV(hue, 1, 1)
+                    pcall(callback, color)
+                end
+                sample.ImageColor3 = Color3.fromHSV(hue, sat, val)
+                saturation.ImageColor3 = Color3.fromHSV(hue, 1, 1)
+                local hoverPalette, hoverSat = false, false
+                palette.MouseEnter:Connect(function() window.Draggable = false; hoverPalette = true end)
+                palette.MouseLeave:Connect(function() window.Draggable = true; hoverPalette = false end)
+                saturation.MouseEnter:Connect(function() window.Draggable = false; hoverSat = true end)
+                saturation.MouseLeave:Connect(function() window.Draggable = true; hoverSat = false end)
+                local palInd = palette:FindFirstChild("Indicator")
+                local satInd = saturation:FindFirstChild("Indicator")
+                palInd.ZIndex = palInd.ZIndex + windowCount * 10
+                satInd.ZIndex = satInd.ZIndex + windowCount * 10
+                local isMouseDown = false
+                local hbConn
+                UserInputService.InputBegan:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        isMouseDown = true
+                        hbConn = RunService.Heartbeat:Connect(function()
+                            if not isMouseDown or isDropdownOpen then
+                                if hbConn then hbConn:Disconnect(); hbConn = nil end
+                                return
+                            end
+                            if hoverPalette then
+                                local pos = getMousePosition()
+                                local fx = math.clamp((pos.X - palette.AbsolutePosition.X) / palette.AbsoluteSize.X, 0, 1)
+                                local fy = math.clamp((pos.Y - palette.AbsolutePosition.Y) / palette.AbsoluteSize.Y, 0, 1)
+                                hue = fx; sat = 1 - fy
+                                palInd.Position = UDim2.new(fx, -palInd.AbsoluteSize.X / 2, fy, -palInd.AbsoluteSize.Y / 2)
+                                updateColor()
+                            elseif hoverSat then
+                                local pos = getMousePosition()
+                                local fy = math.clamp((pos.Y - saturation.AbsolutePosition.Y) / saturation.AbsoluteSize.Y, 0, 1)
+                                val = 1 - fy
+                                satInd.Position = UDim2.new(0, 0, fy, 0)
+                                updateColor()
+                            end
+                        end)
+                    end
+                end)
+                UserInputService.InputEnded:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        isMouseDown = false
+                        if hbConn then hbConn:Disconnect(); hbConn = nil end
+                    end
+                end)
+                function pickerAPI:Set(color)
+                    color = typeof(color) == "Color3" and color or Color3.new(1, 1, 1)
+                    local h, s, v = rgbToHsv(color.R * 255, color.G * 255, color.B * 255)
+                    sample.ImageColor3 = color
+                    saturation.ImageColor3 = Color3.fromHSV(h, 1, 1)
+                    pcall(callback, color)
+                end
+                return pickerAPI, picker
+            end
+
+            function tabAPI:AddHorizontalAlignment()
+                local alignAPI = {}
+                local row = Prefabs:FindFirstChild("HorizontalAlignment"):Clone()
+                local parent = tabContent:FindFirstChild("TabScroller")
+                row.Parent = parent or tabContent
+                function alignAPI:AddButton(...)
+                    local results = { tabAPI:AddButton(...) }
+                    results[#results].Parent = row
+                    return table.unpack(results)
+                end
+                return alignAPI, row
+            end
+
+            function tabAPI:AddFolder(folderName)
+                local folderAPI = {}
+                folderName = tostring(folderName or "New Folder")
+                local folder = Prefabs:FindFirstChild("Folder"):Clone()
+                local btn = folder:FindFirstChild("Button")
+                local contents = folder:FindFirstChild("Objects")
+                local toggleIcon = btn:FindFirstChild("Toggle")
+                folder.ZIndex = folder.ZIndex + windowCount * 10
+                btn.ZIndex = btn.ZIndex + windowCount * 10
+                contents.ZIndex = contents.ZIndex + windowCount * 10
+                toggleIcon.ZIndex = toggleIcon.ZIndex + windowCount * 10
+                btn:GetChildren()[1].ZIndex = btn:GetChildren()[1].ZIndex + windowCount * 10
+                local parent = tabContent:FindFirstChild("TabScroller")
+                folder.Parent = parent or tabContent
+                btn.Text = "      " .. folderName
+                btn:GetChildren()[1].ImageColor3 = options.main_color
+                local function getFolderHeight()
+                    local h = 25
+                    for _, child in ipairs(contents:GetChildren()) do
+                        if not child:IsA("UIListLayout") then h = h + child.AbsoluteSize.Y + 5 end
+                    end
+                    return h
+                end
+                local isFolderOpen = false
+                local folderHbConn
+                btn.MouseButton1Click:Connect(function()
+                    isFolderOpen = not isFolderOpen
+                    if isFolderOpen then
+                        tween(toggleIcon, { Rotation = 90 }, options.tween_time)
+                        contents.Visible = true
+                        if folderHbConn then folderHbConn:Disconnect() end
+                        folderHbConn = RunService.Heartbeat:Connect(function()
+                            if isFolderOpen then
+                                folder.Size = UDim2.new(1, 0, 0, getFolderHeight())
+                            else
+                                if folderHbConn then folderHbConn:Disconnect(); folderHbConn = nil end
+                            end
+                        end)
+                    else
+                        tween(toggleIcon, { Rotation = 0 }, options.tween_time)
+                        contents.Visible = false
+                        folder.Size = UDim2.new(1, 0, 0, 20)
+                        if folderHbConn then folderHbConn:Disconnect(); folderHbConn = nil end
+                    end
+                end)
+                for method, fn in pairs(tabAPI) do
+                    folderAPI[method] = function(...)
+                        local results = { fn(...) }
+                        results[#results].Parent = contents
+                        return table.unpack(results)
+                    end
+                end
+                return folderAPI, folder
+            end
+
+            return tabAPI, tabContent
+        end
+    end
+
+    for _, child in ipairs(window:GetDescendants()) do
+        if safeGet(child, "ZIndex") then child.ZIndex = child.ZIndex + windowCount * 10 end
+    end
+
+    return windowAPI, window
+end
+
+script.AncestryChanged:Connect(function()
+    if not script.Parent then disconnectAll() end
+end)
+
+return Library
